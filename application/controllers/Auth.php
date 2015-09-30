@@ -15,6 +15,7 @@ class Auth extends CI_Controller
 		
 		$this->load->library('Form_validation');
 		$this->load->library('DX_Auth');
+                $this->load->library('Recaptcha');
 		
 		$this->load->helper('url');
 		$this->load->helper('form');
@@ -133,6 +134,17 @@ class Auth extends CI_Controller
 		$data['auth_message'] = 'You have been logged out.';		
 		$this->load->view($this->dx_auth->logout_view, $data);
 	}
+        
+        public function getResponse($str){
+            $response = $this->recaptcha->verifyResponse($str);
+            if ($response['success']) { 
+                return true;
+            } else {
+		//$this->form_validation->set_message('getResponse', '%s missing'. var_dump($response) );
+                $this->form_validation->set_message('getResponse', '%s missing or wrong');
+		return false;
+            }
+        }
 	
 	
 	function register()
@@ -150,10 +162,14 @@ class Auth extends CI_Controller
 			// Is registration using captcha
 			if ($this->dx_auth->captcha_registration)
 			{
+                            $content['recaptcha_html'] = $this->recaptcha->render();
+                            // Set recaptcha rules
+                            $this->form_validation->set_rules('g-recaptcha-response', '<b>Captcha</b>', 'callback_getResponse');
 				// Set recaptcha rules.
 				// IMPORTANT: Do not change 'recaptcha_response_field' because it's used by reCAPTCHA API,
 				// This is because the limitation of reCAPTCHA, not DX Auth library
-				$val->set_rules('recaptcha_response_field', 'Confirmation Code', 'trim|required|callback_recaptcha_check');
+				
+                            //$val->set_rules('recaptcha_response_field', 'Confirmation Code', 'trim|required|callback_recaptcha_check');
 			}
 
 			// Run form validation and register user if it's pass the validation
@@ -174,8 +190,9 @@ class Auth extends CI_Controller
 			}
 			else
 			{
+                                $this->session->set_flashdata('alert', '<div class="alert alert-danger">' . validation_errors() . '</div>');
 				// Load registration page
-				$this->load->view('Auth/register_form');
+				$this->load->view('Auth/register_form', $content);
 			}
 		}
 		elseif ( ! $this->dx_auth->allow_registration)
