@@ -33,7 +33,12 @@ $email = array(
 <body>
 
 <fieldset><legend>Register</legend>
-    <p><?php echo $this->session->flashdata('alert');?></p>
+    <p><?php 
+                    if($this->session->flashdata('alert')!='') { ?>
+                        <div class="alert alert-danger">
+                        <?php echo $this->session->flashdata('alert'); ?>
+                        </div>    
+                    <?php }?></p>
     <?php echo form_open($this->uri->uri_string())?>
 
 <dl>
